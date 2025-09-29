@@ -21,6 +21,14 @@ export default function NewEventClient({ members }: { members: any[] }) {
   const [selectAll, setSelectAll] = useState(false)
   const [saving, setSaving] = useState(false)
 
+  const savedLocations = [
+    {
+      name: "Ged. Manterawu",
+      lat: -6.97186401213195,
+      lng: 107.6323704980503,
+    },
+  ]
+
   function toggle(id: string) {
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
@@ -34,6 +42,10 @@ export default function NewEventClient({ members }: { members: any[] }) {
       () => toast({ title: "Location permission denied" }),
       { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 },
     )
+  }
+
+  function onUseSavedLocation(loc: { name: string; lat: number; lng: number }) {
+    setLocation((l) => ({ ...l, lat: String(loc.lat), lng: String(loc.lng) }))
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -77,17 +89,17 @@ export default function NewEventClient({ members }: { members: any[] }) {
           <form onSubmit={onSubmit} className="grid gap-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label className="mb-1">Name</Label>
+                <Label>Name</Label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} required />
               </div>
               <div>
-                <Label className="mb-1">Date & Time</Label>
+                <Label>Date & Time</Label>
                 <Input type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} required />
               </div>
             </div>
             <div className="grid md:grid-cols-3 gap-4">
               <div>
-                <Label className="mb-1">Latitude</Label>
+                <Label>Latitude</Label>
                 <Input
                   value={location.lat}
                   onChange={(e) => setLocation({ ...location, lat: e.target.value })}
@@ -95,7 +107,7 @@ export default function NewEventClient({ members }: { members: any[] }) {
                 />
               </div>
               <div>
-                <Label className="mb-1">Longitude</Label>
+                <Label>Longitude</Label>
                 <Input
                   value={location.lng}
                   onChange={(e) => setLocation({ ...location, lng: e.target.value })}
@@ -103,7 +115,7 @@ export default function NewEventClient({ members }: { members: any[] }) {
                 />
               </div>
               <div>
-                <Label className="mb-1">Radius (m)</Label>
+                <Label>Radius (m)</Label>
                 <Input
                   value={location.radiusMeters}
                   onChange={(e) => setLocation({ ...location, radiusMeters: e.target.value })}
@@ -114,9 +126,21 @@ export default function NewEventClient({ members }: { members: any[] }) {
                   Use Current Location
                 </Button>
               </div>
+              <div className="md:col-span-3 flex flex-wrap items-center gap-2">
+                <Label className="mr-1">Saved Location</Label>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => onUseSavedLocation(savedLocations[0])}
+                  aria-label="Use Ged. Manterawu location"
+                >
+                  Use Ged. Manterawu
+                </Button>
+                <span className="text-sm text-muted-foreground">{"(-6.97186401213195, 107.6323704980503)"}</span>
+              </div>
             </div>
             <div>
-              <Label className="mb-1">Late After (minutes)</Label>
+              <Label>Late After (minutes)</Label>
               <Input
                 type="number"
                 min={0}

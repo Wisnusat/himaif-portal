@@ -5,7 +5,7 @@ import { Member } from "@/models/member"
 
 export async function GET() {
   await dbConnect()
-  const events = await Event.find().sort({ startAt: -1 }).select("name startAt").lean()
+  const events = await Event.find().sort({ startAt: -1 }).select("name startAt endedAt").lean()
   return NextResponse.json({ events })
 }
 

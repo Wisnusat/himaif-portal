@@ -18,6 +18,7 @@ export interface IEvent extends Document {
   }
   invitedMembers: Types.ObjectId[]
   attendance: IAttendance[]
+  endedAt?: Date
   createdAt: Date
   updatedAt: Date
 }
@@ -44,6 +45,7 @@ const EventSchema = new Schema<IEvent>(
     },
     invitedMembers: [{ type: Schema.Types.ObjectId, ref: "Member" }],
     attendance: [AttendanceSchema],
+    endedAt: { type: Date },
   },
   { timestamps: true },
 )

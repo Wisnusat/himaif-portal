@@ -35,6 +35,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const event = await Event.findById(id)
   if (!event) return NextResponse.json({ ok: false, error: "Event not found" }, { status: 404 })
 
+  // Check if event manually finished
+  if (event.endedAt) {
+    return NextResponse.json({ ok: false, error: "Event has been finished" }, { status: 400 })
+  }
+
   // Check invited
   const isInvited = event.invitedMembers.some((m) => m.toString() === member._id.toString())
   if (!isInvited) return NextResponse.json({ ok: false, error: "Not invited to this event" }, { status: 403 })

@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import useSWR from "swr"
-import QRCode from "qrcode"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -27,18 +27,11 @@ export default function EventClient({
 
   const now = new Date()
   const start = new Date(ev?.startAt ?? now)
+  const isFinished = Boolean(ev?.endedAt)
   const activeWindow = useMemo(() => {
     const end = new Date(start.getTime() + 4 * 60 * 60 * 1000)
-    return now >= start && now <= end
-  }, [start, now])
-
-  useEffect(() => {
-    // QR contains a minimal JSON payload with eventId
-    const payload = JSON.stringify({ eventId: id })
-    QRCode.toDataURL(payload, { margin: 1, width: 256 })
-      .then(setQrUrl)
-      .catch(() => setQrUrl(""))
-  }, [id])
+    return !isFinished && now >= start && now <= end
+  }, [start, now, isFinished])
 
   const invited = invitedMembers || []
   const attendance = ev?.attendance || []
@@ -50,6 +43,23 @@ export default function EventClient({
     const status = rec ? (new Date(rec.checkinAt) > lateAfter ? "Late" : "Present") : "Absent"
     return { ...m, status, checkinAt: rec?.checkinAt }
   })
+
+  const totalInvited = invited.length
+  const totalPresent = rows.filter((r: any) => r.status === "Present").length
+  const totalLate = rows.filter((r: any) => r.status === "Late").length
+  const totalAbsent = rows.filter((r: any) => r.status === "Absent").length
+
+  async function finishEvent() {
+    try {
+      const res = await fetch(`/api/events/${id}/finish`, { method: "POST" })
+      const j = await res.json()
+      if (j?.ok) {
+        mutate()
+      }
+    } catch (e) {
+      // no-op
+    }
+  }
 
   return (
     <main className="min-h-dvh mx-auto max-w-5xl p-6 grid gap-6">
@@ -68,7 +78,9 @@ export default function EventClient({
                 <p>Generating QR...</p>
               )
             ) : (
-              <p className="text-sm text-muted-foreground">QR is available during the event time only.</p>
+              <p className="text-sm text-muted-foreground">
+                {isFinished ? "Event has been finished." : "QR is available during the event time only."}
+              </p>
             )}
           </CardContent>
         </Card>
@@ -76,7 +88,7 @@ export default function EventClient({
           <CardHeader>
             <CardTitle>Event Info</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm grid gap-1">
+          <CardContent className="text-sm grid gap-2">
             <p>
               Start: {new Date(ev?.startAt).toLocaleString()} | Late after: {ev?.lateAfterMinutes} min
             </p>
@@ -86,6 +98,12 @@ export default function EventClient({
             <p>
               Invited: {invited.length} | Attended: {attendance.length}
             </p>
+            {!isFinished && (
+              <Button onClick={finishEvent} variant="destructive" className="w-fit mt-2">
+                Finish Event
+              </Button>
+            )}
+            {isFinished && <Badge variant="secondary">Finished at {new Date(ev?.endedAt).toLocaleString()}</Badge>}
           </CardContent>
         </Card>
       </div>
@@ -94,7 +112,13 @@ export default function EventClient({
         <CardHeader>
           <CardTitle>Attendance Report</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="grid gap-3">
+          <div className="flex flex-wrap gap-3 text-sm">
+            <Badge variant="secondary">Total Invited: {totalInvited}</Badge>
+            <Badge>Present: {totalPresent}</Badge>
+            <Badge variant="destructive">Late: {totalLate}</Badge>
+            <Badge variant="outline">Absent: {totalAbsent}</Badge>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-left">
