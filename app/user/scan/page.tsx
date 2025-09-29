@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 
 // dynamic import to avoid SSR issues
-const QrReader = dynamic(() => import("react-qr-reader"), { ssr: false })
+const QrReader = dynamic(() => import("react-qr-reader").then((m: any) => (m?.QrReader ? m.QrReader : m?.default)), {
+  ssr: false,
+})
 
 export default function ScanPage() {
   const { toast } = useToast()
@@ -81,11 +83,14 @@ export default function ScanPage() {
           <div className="rounded-lg overflow-hidden border">
             <QrReader
               constraints={{ facingMode: "environment" }}
-              onResult={(res: any) => {
-                const txt = res?.getText ? res.getText() : res?.text
-                if (txt) setScannedText(txt)
+              onResult={(result: any, error: any) => {
+                if (result) {
+                  const txt = result?.getText ? result.getText() : result?.text
+                  if (txt) setScannedText(txt)
+                }
+                // Optionally, you can handle error if needed
+                // if (error) { /* silently ignore or toast */ }
               }}
-              onError={() => {}}
               className="w-full"
             />
           </div>
